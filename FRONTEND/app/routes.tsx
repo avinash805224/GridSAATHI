@@ -5,13 +5,10 @@ import { PowerHouseShell } from '../components/layout/PowerHouseShell';
 import { PublicShell } from '../components/layout/PublicShell';
 import { RequireRole } from '../guards/RequireRole';
 import { CommandCenterPage } from '../features/powerhouse/command-center/CommandCenterPage';
-import { ForecastingPage } from '../features/powerhouse/forecast/ForecastingPage';
+import { ForecastingPredictorPage } from '../features/powerhouse/forecast/ForecastingPredictorPage';
 import { AlertsPage } from '../features/powerhouse/alerts/AlertsPage';
 import { LoadManagementPage } from '../features/powerhouse/load-management/LoadManagementPage';
-import { DemandResponsePage } from '../features/powerhouse/demand-response/DemandResponsePage';
-import { StoragePermissionsPage } from '../features/powerhouse/storage-permissions/StoragePermissionsPage';
 import { SettingsPage } from '../features/powerhouse/settings/SettingsPage';
-import { PredictorPage } from '../features/powerhouse/predictor/PredictorPage';
 import { LoadControlPage } from '../features/powerhouse/load-control/LoadControlPage';
 import { TechnicalLossPage } from '../features/powerhouse/technical-loss/TechnicalLossPage';
 
@@ -39,16 +36,15 @@ export const AppRoutes: React.FC = () => {
         }
       >
         <Route index element={<CommandCenterPage />} />
-        <Route path="forecast" element={<ForecastingPage />} />
-        <Route path="predictor" element={<PredictorPage />} />
+        <Route path="forecast" element={<ForecastingPredictorPage />} />
+        <Route path="predictor" element={<Navigate to="/powerhouse/forecast" replace />} />
         <Route path="alerts" element={<Navigate to="/powerhouse/alerts/weather" replace />} />
         <Route path="alerts/:tab" element={<AlertsPage />} />
         <Route path="load" element={<LoadManagementPage />} />
         <Route path="load/:feederId" element={<LoadManagementPage />} />
         <Route path="load-control" element={<LoadControlPage />} />
         <Route path="technical-loss" element={<TechnicalLossPage />} />
-        <Route path="demand-response" element={<DemandResponsePage />} />
-        <Route path="storage" element={<StoragePermissionsPage />} />
+        <Route path="demand-response" element={<Navigate to="/powerhouse/alerts/response" replace />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

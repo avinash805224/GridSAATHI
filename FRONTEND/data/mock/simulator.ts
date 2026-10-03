@@ -121,13 +121,19 @@ class SimulatorEngine {
       const gridAllocation = feeder.capacityKw * 0.45;
       const fSupply = Math.min(effectiveFeederDemand, gridAllocation + fRenewable);
       const fShortfall = Math.max(0, effectiveFeederDemand - (gridAllocation + fRenewable));
+      const feederHasActiveDr = !!activeDr && (
+        activeDr.scope.level === 'powerhouse' ||
+        (activeDr.scope.level === 'area' && activeDr.scope.ids.includes(feeder.areaId)) ||
+        (activeDr.scope.level === 'feeder' && activeDr.scope.ids.includes(feeder.id)) ||
+        (activeDr.scope.level === 'colony' && feeder.colonyIds.some((colonyId) => activeDr.scope.ids.includes(colonyId)))
+      );
 
       const status = computeSupplyStatus({
         shortfallKw: fShortfall,
         capacityKw: feeder.capacityKw,
         currentDemandKw: effectiveFeederDemand,
         hasOutage: anyOutage,
-        hasActiveDR: !!activeDr,
+        hasActiveDR: feederHasActiveDr,
       });
 
       feederReadings[feeder.id] = {

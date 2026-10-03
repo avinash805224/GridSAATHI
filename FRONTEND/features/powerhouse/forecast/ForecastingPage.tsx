@@ -19,7 +19,7 @@ import { ForecastPoint, ShortfallWindow } from '../../../domain/types';
 import { formatPower } from '../../../lib/format';
 import { formatTime12h } from '../../../lib/time';
 import { useNow } from '../../../hooks/useNow';
-import { Bell, Radio, BatteryMedium, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Bell, Radio, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export const ForecastingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -343,14 +343,6 @@ export const ForecastingPage: React.FC = () => {
                     onClick={() => navigate('/powerhouse/demand-response')}
                   >
                     Plan DR
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    icon={<BatteryMedium className="w-3.5 h-3.5" />}
-                    onClick={() => navigate('/powerhouse/storage')}
-                  >
-                    Review Storage
                   </Button>
                 </div>
               </div>

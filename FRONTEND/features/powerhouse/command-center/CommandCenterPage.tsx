@@ -30,7 +30,7 @@ export const CommandCenterPage: React.FC = () => {
   const [ribbonSegments, setRibbonSegments] = useState<RibbonSegment[]>([]);
   const [chartPoints, setChartPoints] = useState<ChartDataPoint[]>([]);
 
-  // Load 24h forecast points for Ribbon and Chart
+  // Load forecast points for the live chart
   useEffect(() => {
     let mounted = true;
     async function loadForecast() {
@@ -42,12 +42,11 @@ export const CommandCenterPage: React.FC = () => {
 
       if (!mounted) return;
 
-      const segs: RibbonSegment[] = points.map((p) => ({
-        ts: p.ts,
-        status: p.status,
-        shortfallKw: p.shortfallKw,
-      }));
-      setRibbonSegments(segs);
+      setRibbonSegments(points.map((point) => ({
+        ts: point.ts,
+        status: point.status,
+        shortfallKw: point.shortfallKw,
+      })));
 
       // Prepend simulated past 4 hours to chart points
       const pastPoints: ChartDataPoint[] = [];
@@ -87,6 +86,11 @@ export const CommandCenterPage: React.FC = () => {
   // Derived KPIs
   const totalDemand = powerHouseReading.demandKw;
   const totalSupply = powerHouseReading.supplyKw;
+  const supplyBalanceKw = totalSupply - totalDemand;
+  const supplyBalancePct = totalDemand > 0 ? Math.min(100, (totalSupply / totalDemand) * 100) : 0;
+  const supplyIsShort = supplyBalanceKw < -50;
+  const voltageInRange = powerHouseReading.voltageV >= 218.5 && powerHouseReading.voltageV <= 241.5;
+  const frequencyInRange = powerHouseReading.frequencyHz >= 49.5 && powerHouseReading.frequencyHz <= 50.5;
   const renewableKw = powerHouseReading.solarKw + powerHouseReading.windKw;
   const renewableSharePct = totalDemand > 0 ? (renewableKw / totalDemand) * 100 : 0;
   const activeAlerts = alerts.filter((a) => a.status === 'active');
@@ -154,7 +158,53 @@ export const CommandCenterPage: React.FC = () => {
         <GridSchematic />
       </section>
 
-      {/* Geographic Boundary & Colony Distribution Map (Leaflet OSM) */}
+      {/* Compact live substation metrics */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="p-4 bg-white rounded-[12px] border border-[#DDE9E0]">
+          <span className="text-xs font-medium text-[#5B6B62]">Substation Voltage</span>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-xl font-bold font-heading text-[#0C3B2B] tabular-nums">
+              {powerHouseReading.voltageV.toFixed(1)}
+            </span>
+            <span className="text-xs text-[#5B6B62]">V</span>
+          </div>
+          <span className={`text-[11px] ${voltageInRange ? 'text-[#13724A]' : 'text-[#C73E3A]'}`}>
+            {voltageInRange ? 'Within operating range' : 'Outside operating range'} · nominal 230 V
+          </span>
+        </div>
+
+        <div className="p-4 bg-white rounded-[12px] border border-[#DDE9E0]">
+          <span className="text-xs font-medium text-[#5B6B62]">Grid Frequency</span>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-xl font-bold font-heading text-[#0C3B2B] tabular-nums">
+              {powerHouseReading.frequencyHz.toFixed(2)}
+            </span>
+            <span className="text-xs text-[#5B6B62]">Hz</span>
+          </div>
+          <span className={`text-[11px] ${frequencyInRange ? 'text-[#13724A]' : 'text-[#C73E3A]'}`}>
+            {frequencyInRange ? 'Within operating range' : 'Outside operating range'} · nominal 50 Hz
+          </span>
+        </div>
+
+        <div className="p-4 bg-white rounded-[12px] border border-[#DDE9E0]">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-[#5B6B62]">Substation Balance</span>
+            <span className={`text-[11px] font-semibold ${supplyIsShort ? 'text-[#C73E3A]' : 'text-[#13724A]'}`}>
+              {supplyBalanceKw > 50 ? 'Surplus' : supplyIsShort ? 'Shortfall' : 'Balanced'}
+            </span>
+          </div>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-xl font-bold font-heading text-[#0C3B2B] tabular-nums">
+              {supplyBalanceKw >= 0 ? '+' : '-'}{formatPower(Math.abs(supplyBalanceKw), 1)}
+            </span>
+          </div>
+          <div className="mt-2 h-1.5 rounded-full bg-[#EAF7EE] overflow-hidden" aria-label={`Supply covers ${supplyBalancePct.toFixed(0)}% of demand`}>
+            <div className="h-full bg-[#27A163]" style={{ width: `${supplyBalancePct}%` }} />
+          </div>
+        </div>
+      </section>
+
+      {/* Geographic Boundary & Colony Distribution Map */}
       <AreaMapCard />
 
       {/* 24-Hour Supply Ribbon */}
@@ -177,13 +227,12 @@ export const CommandCenterPage: React.FC = () => {
             {language === 'hi' ? 'पूर्ण पूर्वानुमान खोलें →' : 'Open Full Forecast →'}
           </button>
         </div>
-
         <SupplyRibbon
           segments={ribbonSegments}
           nowTs={now}
           variant="powerhouse"
-          onSegmentClick={(seg) => {
-            if (seg.status !== 'stable') {
+          onSegmentClick={(segment) => {
+            if (segment.status !== 'stable') {
               navigate('/powerhouse/alerts/weather');
             }
           }}

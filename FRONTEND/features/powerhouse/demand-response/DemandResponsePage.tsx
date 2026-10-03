@@ -6,9 +6,13 @@ import { Button } from '../../../components/ui/Button';
 import { ResponseCurve } from '../../../components/charts/ResponseCurve';
 import { formatPower } from '../../../lib/format';
 import { formatTime12h } from '../../../lib/time';
-import { NodeLevel } from '../../../domain/types';
-import { Radio, Plus, CheckCircle2, XCircle, Users } from 'lucide-react';
+import { AlertChannel, NodeLevel } from '../../../domain/types';
+import { Radio, Plus, CheckCircle2, Users } from 'lucide-react';
 import { useToast } from '../../../components/ui/Toast';
+import { useSessionStore } from '../../../store/useSessionStore';
+import { getDictionary } from '../../../config/i18n';
+
+type DispatchChannel = Extract<AlertChannel, 'app' | 'sms' | 'banner' | 'email' | 'whatsapp'>;
 
 export const DemandResponsePage: React.FC = () => {
   const { showToast } = useToast();
@@ -16,6 +20,8 @@ export const DemandResponsePage: React.FC = () => {
   const startEvent = useDemandResponseStore((s) => s.startEvent);
   const endEvent = useDemandResponseStore((s) => s.endEvent);
   const publishAlert = useAlertStore((s) => s.publishAlert);
+  const language = useSessionStore((s) => s.language);
+  const copy = getDictionary(language);
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [scopeLevel, setScopeLevel] = useState<NodeLevel>('area');
@@ -24,13 +30,23 @@ export const DemandResponsePage: React.FC = () => {
   const [severity, setSeverity] = useState<'request' | 'strong_request'>('strong_request');
   const [targetReductionKw, setTargetReductionKw] = useState('400');
   const [message, setMessage] = useState('Evening renewable peak shortfall: please pause ACs, geysers, and pumps for 2 hours.');
+  const [channels, setChannels] = useState<DispatchChannel[]>(['app', 'sms', 'banner', 'email', 'whatsapp']);
+
+  const toggleChannel = (channel: DispatchChannel) => {
+    setChannels((selected) => {
+      if (selected.includes(channel)) {
+        return selected.length > 1 ? selected.filter((item) => item !== channel) : selected;
+      }
+      return [...selected, channel];
+    });
+  };
 
   const handleCreateEvent = (e: React.FormEvent) => {
     e.preventDefault();
     const durationMs = parseFloat(durationHours) * 60 * 60 * 1000;
     const targetKw = parseFloat(targetReductionKw) || 300;
 
-    const newEvent = startEvent({
+    startEvent({
       scope: { level: scopeLevel, ids: [scopeId] },
       startsAt: Date.now(),
       endsAt: Date.now() + durationMs,
@@ -41,7 +57,7 @@ export const DemandResponsePage: React.FC = () => {
       status: 'active',
     });
 
-    // Also dispatch alert to citizen app & SMS
+    // Publish the matching notification using the selected dispatch channels.
     publishAlert({
       type: 'demand_response',
       severity: severity === 'strong_request' ? 'warning' : 'advisory',
@@ -52,7 +68,7 @@ export const DemandResponsePage: React.FC = () => {
       endsAt: Date.now() + durationMs,
       source: 'operator',
       status: 'active',
-      channels: ['app', 'sms', 'banner'],
+      channels,
     });
 
     showToast({
@@ -82,10 +98,10 @@ export const DemandResponsePage: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-heading text-[#0C3B2B] tracking-tight">
-            Demand Response Management
+            {copy.drManagement}
           </h1>
           <p className="text-xs text-[#5B6B62] mt-1">
-            Coordinate voluntary appliance deferral during renewable generation troughs
+            {copy.drDescription}
           </p>
         </div>
         <Button
@@ -93,7 +109,7 @@ export const DemandResponsePage: React.FC = () => {
           icon={<Plus className="w-4 h-4" />}
           onClick={() => setShowCreateForm(!showCreateForm)}
         >
-          {showCreateForm ? 'Cancel Creation' : 'Initiate Demand Response'}
+          {showCreateForm ? copy.cancelCreation : copy.initiateDemandResponse}
         </Button>
       </div>
 
@@ -104,7 +120,7 @@ export const DemandResponsePage: React.FC = () => {
           className="p-5 bg-white border border-[#27A163] rounded-[12px] shadow-sm flex flex-col gap-4 animate-in fade-in"
         >
           <h2 className="text-sm font-bold text-[#0C3B2B] flex items-center gap-2">
-            <Radio className="w-4 h-4 text-[#27A163]" /> Dispatch New Demand Curtailment Event
+            <Radio className="w-4 h-4 text-[#27A163]" /> {copy.dispatchDemandResponse}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -121,9 +137,9 @@ export const DemandResponsePage: React.FC = () => {
                 }}
                 className="w-full text-xs bg-white border border-[#DDE9E0] rounded-[6px] px-3 py-2 text-[#16241D]"
               >
-                <option value="area">Area / Zone</option>
-                <option value="feeder">11kV Feeder</option>
-                <option value="colony">Specific Colony</option>
+                <option value="area">{language === 'hi' ? 'क्षेत्र / ज़ोन' : 'Area / Zone'}</option>
+                <option value="feeder">{language === 'hi' ? '11kV फीडर' : '11kV Feeder'}</option>
+                <option value="colony">{language === 'hi' ? 'विशिष्ट कॉलोनी' : 'Specific Colony'}</option>
               </select>
             </div>
 
@@ -190,6 +206,29 @@ export const DemandResponsePage: React.FC = () => {
               className="w-full text-xs bg-white border border-[#DDE9E0] rounded-[6px] px-3 py-2"
             />
           </div>
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-xs font-medium text-[#5B6B62]">{copy.broadcastChannels}</legend>
+            <div className="flex flex-wrap gap-4">
+              {([
+                ['app', copy.residentApp],
+                ['sms', copy.sms],
+                ['email', copy.email],
+                ['whatsapp', copy.whatsapp],
+                ['banner', copy.notificationBanner],
+              ] as const).map(([channel, label]) => (
+                <label key={channel} className="flex items-center gap-2 text-xs text-[#16241D] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={channels.includes(channel)}
+                    onChange={() => toggleChannel(channel)}
+                    className="rounded text-[#27A163] focus:ring-0"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button size="sm" variant="ghost" type="button" onClick={() => setShowCreateForm(false)}>

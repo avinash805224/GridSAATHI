@@ -417,7 +417,6 @@ export const TechnicalLossPage: React.FC = () => {
                 <th className="py-3 font-medium">Asset Name & Type</th>
                 <th className="py-3 font-medium">Operating Age</th>
                 <th className="py-3 font-medium text-center w-32">Health Index</th>
-                <th className="py-3 font-medium text-right">RUL (Lifeline)</th>
                 <th className="py-3 font-medium text-right">Core / Hotspot Temp</th>
                 <th className="py-3 font-medium text-right">Insulation / DGA</th>
                 <th className="py-3 font-medium text-right">Technical Loss</th>
@@ -456,9 +455,6 @@ export const TechnicalLossPage: React.FC = () => {
                           {asset.healthIndexPct}%
                         </span>
                       </div>
-                    </td>
-                    <td className="py-3 text-right tabular-nums font-semibold text-[#0C3B2B]">
-                      {asset.remainingUsefulLifeYears} yrs
                     </td>
                     <td className="py-3 text-right tabular-nums font-medium">
                       <span

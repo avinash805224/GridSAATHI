@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, AlertType, Severity, NodeLevel } from '../../domain/types';
+import { Alert, AlertChannel, AlertType, Severity, NodeLevel } from '../../domain/types';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { INITIAL_TOPOLOGY } from '../../config/topology';
@@ -7,6 +7,8 @@ import { useAlertStore } from '../../store/useAlertStore';
 import { useToast } from '../ui/Toast';
 import { getSeverityStyle } from '../../domain/status';
 import { Send, Eye, MessageSquare, Bell } from 'lucide-react';
+import { useSessionStore } from '../../store/useSessionStore';
+import { getDictionary } from '../../config/i18n';
 
 interface AlertComposerProps {
   initialType?: AlertType;
@@ -25,6 +27,8 @@ export const AlertComposer: React.FC<AlertComposerProps> = ({
 }) => {
   const { showToast } = useToast();
   const publishAlert = useAlertStore((s) => s.publishAlert);
+  const language = useSessionStore((s) => s.language);
+  const copy = getDictionary(language);
 
   const [type, setType] = useState<AlertType>(initialType);
   const [severity, setSeverity] = useState<Severity>('advisory');
@@ -33,9 +37,9 @@ export const AlertComposer: React.FC<AlertComposerProps> = ({
   const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState(initialBody);
   const [durationHours, setDurationHours] = useState('3');
-  const [channels, setChannels] = useState<Array<'app' | 'sms' | 'banner'>>(['app', 'sms', 'banner']);
+  const [channels, setChannels] = useState<AlertChannel[]>(['app', 'sms', 'banner', 'email', 'whatsapp']);
 
-  const toggleChannel = (ch: 'app' | 'sms' | 'banner') => {
+  const toggleChannel = (ch: AlertChannel) => {
     if (channels.includes(ch)) {
       if (channels.length > 1) {
         setChannels(channels.filter((c) => c !== ch));
@@ -86,10 +90,10 @@ export const AlertComposer: React.FC<AlertComposerProps> = ({
   return (
     <div className={`bg-white rounded-[12px] border border-[#DDE9E0] p-5 ${className}`}>
       <h3 className="text-sm font-semibold text-[#0C3B2B] mb-1 flex items-center gap-2">
-        <Send className="w-4 h-4 text-[#27A163]" /> Dispatch Alert to Neighborhoods
+        <Send className="w-4 h-4 text-[#27A163]" /> {language === 'hi' ? 'क्षेत्र में अलर्ट भेजें' : 'Dispatch Alert to Neighborhoods'}
       </h3>
       <p className="text-xs text-[#5B6B62] mb-4">
-        Broadcast operational notifications and load-curtailment requests across citizen apps and simulated SMS.
+        {language === 'hi' ? 'चयनित चैनलों पर संचालन सूचनाएं और लोड-कटौती अनुरोध भेजें।' : 'Broadcast operational notifications and load-curtailment requests across selected channels.'}
       </p>
 
       <form onSubmit={handlePublish} className="flex flex-col gap-4">
@@ -224,21 +228,23 @@ export const AlertComposer: React.FC<AlertComposerProps> = ({
 
         {/* Broadcast Channels */}
         <div>
-          <label className="text-xs font-medium text-[#5B6B62] block mb-1.5">Broadcast Channels</label>
+          <label className="text-xs font-medium text-[#5B6B62] block mb-1.5">{copy.broadcastChannels}</label>
           <div className="flex flex-wrap items-center gap-3">
             {[
-              { id: 'app', label: 'Resident App Feed' },
-              { id: 'sms', label: 'SMS Phone Gateway' },
-              { id: 'banner', label: 'Top Notification Banner' },
-            ].map((c) => (
-              <label key={c.id} className="flex items-center gap-2 text-xs text-[#16241D] cursor-pointer">
+              { id: 'app' as const, label: copy.residentApp },
+              { id: 'sms' as const, label: copy.sms },
+              { id: 'email' as const, label: copy.email },
+              { id: 'whatsapp' as const, label: copy.whatsapp },
+              { id: 'banner' as const, label: copy.notificationBanner },
+            ].map((channel) => (
+              <label key={channel.id} className="flex items-center gap-2 text-xs text-[#16241D] cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={channels.includes(c.id as any)}
-                  onChange={() => toggleChannel(c.id as any)}
+                  checked={channels.includes(channel.id)}
+                  onChange={() => toggleChannel(channel.id)}
                   className="rounded text-[#27A163] focus:ring-0"
                 />
-                <span>{c.label}</span>
+                <span>{channel.label}</span>
               </label>
             ))}
           </div>
@@ -267,7 +273,7 @@ export const AlertComposer: React.FC<AlertComposerProps> = ({
         {/* Action Button */}
         <div className="flex justify-end pt-2">
           <Button type="submit" variant="primary" icon={<Send className="w-4 h-4" />}>
-            Publish Alert Now
+            {language === 'hi' ? 'अलर्ट अभी प्रकाशित करें' : 'Publish Alert Now'}
           </Button>
         </div>
       </form>

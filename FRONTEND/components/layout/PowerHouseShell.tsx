@@ -5,18 +5,19 @@ import {
   TrendingUp,
   Bell,
   Gauge,
-  Radio,
-  BatteryMedium,
   Settings,
   SlidersHorizontal,
   Zap,
-  Satellite,
   Activity,
   Wrench,
   Eye,
   Globe,
+  Satellite,
+  Radio,
+  BatteryMedium,
 } from 'lucide-react';
 import { LastUpdated } from '../shared/LastUpdated';
+import { LiveGpsTracker } from '../shared/LiveGpsTracker';
 import { ScopePicker, ScopeValue } from '../shared/ScopePicker';
 import { useAlertStore } from '../../store/useAlertStore';
 import { useLocationStore } from '../../store/useLocationStore';
@@ -34,8 +35,7 @@ export const PowerHouseShell: React.FC = () => {
   const setPreviewMode = useSessionStore((s) => s.setPreviewMode);
   const currentArea = useLocationStore((s) => s.currentArea);
 
-  const { t, language, setLanguage, toggleLanguage } = useTranslation();
-
+  const { t, language, toggleLanguage } = useTranslation();
   const [scope, setScope] = useState<ScopeValue>({
     level: 'powerhouse',
     id: currentArea.legacyAreaId || 'ph-pragati',
@@ -46,7 +46,7 @@ export const PowerHouseShell: React.FC = () => {
     { to: '/powerhouse', label: t('commandCenter'), icon: <LayoutDashboard className="w-4 h-4" /> },
     { to: '/powerhouse/predictor', label: t('predictor'), icon: <Satellite className="w-4 h-4" /> },
     { to: '/powerhouse/forecast', label: t('forecasting'), icon: <TrendingUp className="w-4 h-4" /> },
-    { to: '/powerhouse/alerts/weather', label: t('alerts'), icon: <Bell className="w-4 h-4" />, badge: activeAlertsCount },
+  { to: '/powerhouse/alerts/weather', label: t('alertsResponseCenter'), icon: <Bell className="w-4 h-4" />, badge: activeAlertsCount },
     { to: '/powerhouse/load', label: t('smartLoad'), icon: <Gauge className="w-4 h-4" /> },
     { to: '/powerhouse/load-control', label: t('loadControl'), icon: <Activity className="w-4 h-4" /> },
     { to: '/powerhouse/technical-loss', label: t('technicalLoss'), icon: <Wrench className="w-4 h-4" /> },
@@ -143,6 +143,7 @@ export const PowerHouseShell: React.FC = () => {
               <span className="text-xs text-[#5B6B62] font-medium">{t('scope')}:</span>
               <ScopePicker value={scope} onChange={setScope} />
             </div>
+            <LiveGpsTracker />
           </div>
 
           <div className="flex items-center gap-3">

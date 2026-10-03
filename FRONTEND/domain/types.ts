@@ -1,6 +1,7 @@
 export type Severity = 'info' | 'advisory' | 'warning' | 'critical';
 export type SupplyStatus = 'stable' | 'watch' | 'constrained' | 'outage';
 export type AlertType = 'weather' | 'high_load' | 'system' | 'maintenance' | 'demand_response' | 'storage' | 'outage';
+export type AlertChannel = 'app' | 'sms' | 'banner' | 'email' | 'whatsapp';
 export type NodeLevel = 'powerhouse' | 'area' | 'feeder' | 'colony' | 'house';
 
 export interface Area {
@@ -104,7 +105,7 @@ export interface Alert {
   endsAt?: number;
   source: 'auto' | 'operator';
   status: 'draft' | 'scheduled' | 'active' | 'resolved';
-  channels: Array<'app' | 'sms' | 'banner'>;
+  channels: AlertChannel[];
   createdAt: number;
   publishedAt?: number;
 }
